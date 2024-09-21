@@ -8,7 +8,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { Plus, BookOpenText, Book, Settings2 } from "lucide-react";
+import {
+  Plus,
+  BookOpenText,
+  Book,
+  Settings2,
+  Shapes,
+  Bug,
+  FilePlus,
+} from "lucide-react";
 import { usePathname } from "next/navigation";
 
 interface HistoryItem {
@@ -43,7 +51,7 @@ export default function NavLinks() {
 
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>
-          <Link href="/view-mode">
+          <Link href="/playground">
             <Button
               variant="ghost"
               size="icon"
@@ -54,27 +62,29 @@ export default function NavLinks() {
               }`}
               aria-label="API"
             >
-              <BookOpenText className="size-5" />
+              <Shapes className="size-5" />
             </Button>
           </Link>
         </TooltipTrigger>
         <TooltipContent side="right" sideOffset={5}>
-          View Mode
+          Playground
         </TooltipContent>
       </Tooltip>
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-lg"
-            aria-label="Documentation"
-          >
-            <Book className="size-5" />
-          </Button>
+          <Link href="/create">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-lg"
+              aria-label="Create Markdown"
+            >
+              <FilePlus className="size-5 " />
+            </Button>
+          </Link>
         </TooltipTrigger>
         <TooltipContent side="right" sideOffset={5}>
-          Documentation
+          Create Markdown
         </TooltipContent>
       </Tooltip>
       <Tooltip delayDuration={0}>
