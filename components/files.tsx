@@ -58,7 +58,7 @@ export const Files = ({
         className={cx(
           "fixed p-4 flex flex-col gap-4 bg-white dark:bg-zinc-800 z-30",
           { "w-dvw h-96 bottom-0 right-0": !isDesktop },
-          { "w-[600px] h-96 rounded-lg": isDesktop },
+          { "w-[600px] h-96 rounded-lg": isDesktop }
         )}
         initial={{
           y: "100%",
@@ -101,7 +101,7 @@ export const Files = ({
                 });
 
                 setUploadQueue((currentQueue) =>
-                  currentQueue.filter((filename) => filename !== file.name),
+                  currentQueue.filter((filename) => filename !== file.name)
                 );
 
                 mutate([...(files || []), { pathname: file.name }]);
@@ -165,13 +165,13 @@ export const Files = ({
                   selectedFilePathnames.includes(file.pathname) &&
                     !deleteQueue.includes(file.pathname)
                     ? "text-blue-600 dark:text-zinc-50"
-                    : "text-zinc-500",
+                    : "text-zinc-500"
                 )}
                 onClick={() => {
                   setSelectedFilePathnames((currentSelections) => {
                     if (currentSelections.includes(file.pathname)) {
                       return currentSelections.filter(
-                        (path) => path !== file.pathname,
+                        (path) => path !== file.pathname
                       );
                     } else {
                       return [...currentSelections, file.pathname];
@@ -210,12 +210,12 @@ export const Files = ({
 
                   setDeleteQueue((currentQueue) =>
                     currentQueue.filter(
-                      (filename) => filename !== file.pathname,
-                    ),
+                      (filename) => filename !== file.pathname
+                    )
                   );
 
                   setSelectedFilePathnames((currentSelections) =>
-                    currentSelections.filter((path) => path !== file.pathname),
+                    currentSelections.filter((path) => path !== file.pathname)
                   );
 
                   mutate(files.filter((f) => f.pathname !== file.pathname));

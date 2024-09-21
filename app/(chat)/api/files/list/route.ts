@@ -20,6 +20,6 @@ export async function GET() {
     blobs.map((blob) => ({
       ...blob,
       pathname: blob.pathname.replace(`${user.email}/`, ""),
-    })),
+    }))
   );
 }

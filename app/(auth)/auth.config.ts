@@ -1,39 +1,43 @@
+// app/(auth)/auth.config.ts
 import { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
   pages: {
     signIn: "/login",
-    newUser: "/",
+    newUser: "/chat", // Changed this to redirect new users to chat
   },
   providers: [
-    // added later in auth.ts since it requires bcrypt which is only compatible with Node.js
-    // while this file is also used in non-Node.js environments
+    // ... (unchanged)
   ],
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
-      let isLoggedIn = !!auth?.user;
-      let isOnChat = nextUrl.pathname.startsWith("/");
-      let isOnRegister = nextUrl.pathname.startsWith("/register");
-      let isOnLogin = nextUrl.pathname.startsWith("/login");
+      const isLoggedIn = !!auth?.user;
+      const isOnLandingPage = nextUrl.pathname === "/";
+      const isOnChat = nextUrl.pathname.startsWith("/chat");
+      const isOnRegister = nextUrl.pathname.startsWith("/register");
+      const isOnLogin = nextUrl.pathname.startsWith("/login");
 
-      if (isLoggedIn && (isOnLogin || isOnRegister)) {
-        return Response.redirect(new URL("/", nextUrl));
+      if (isLoggedIn) {
+        // If logged in and trying to access landing, login, or register pages, redirect to chat
+        if (isOnLandingPage || isOnLogin || isOnRegister) {
+          return Response.redirect(new URL("/chat", nextUrl));
+        }
+        // For all other cases when logged in, allow access
+        return true;
       }
 
-      if (isOnRegister || isOnLogin) {
-        return true; // Always allow access to register and login pages
+      // If not logged in
+      if (isOnLandingPage || isOnRegister || isOnLogin) {
+        return true; // Allow access to landing, register and login pages
       }
 
       if (isOnChat) {
-        if (isLoggedIn) return true;
-        return false; // Redirect unauthenticated users to login page
+        // If trying to access chat while not logged in, redirect to login
+        return Response.redirect(new URL("/login", nextUrl));
       }
 
-      if (isLoggedIn) {
-        return Response.redirect(new URL("/", nextUrl));
-      }
-
-      return true;
+      // For any other page, redirect to the landing page
+      return Response.redirect(new URL("/", nextUrl));
     },
   },
 } satisfies NextAuthConfig;

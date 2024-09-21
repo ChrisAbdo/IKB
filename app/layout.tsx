@@ -2,10 +2,11 @@ import { Navbar } from "@/components/navbar";
 import { Metadata } from "next";
 import { Toaster } from "sonner";
 import "./globals.css";
+import { GeistSans } from "geist/font/sans";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    "https://ai-sdk-preview-internal-knowledge-base.vercel.app",
+    "https://ai-sdk-preview-internal-knowledge-base.vercel.app"
   ),
   title: "Internal Knowledge Base",
   description:
@@ -18,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={GeistSans.className}>
       <body>
         <Toaster position="top-center" />
         <Navbar />
