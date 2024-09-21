@@ -6,6 +6,8 @@ import { Input } from "../ui/input";
 import { Skeleton } from "../ui/skeleton";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "../ui/button";
+import { convertMarkdownToPDF } from "@/utils/markdown-to-pdf";
+import { LoaderIcon } from "../icons";
 
 function Buttons({
   onClick,
@@ -90,6 +92,35 @@ export function Panel() {
       } finally {
         setIsLoading(false);
       }
+    } else if (activeIndex === 3 && newIndex === 0) {
+      // Convert markdown to PDF and upload
+      const pdfBlob = convertMarkdownToPDF(scrapedContent);
+      const filename = `${enteredUrl
+        .replace(/[^a-z0-9]/gi, "_")
+        .toLowerCase()}.pdf`;
+
+      const formData = new FormData();
+      formData.append("file", pdfBlob, filename);
+
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/files/upload?filename=${filename}`, {
+          method: "POST",
+          body: formData,
+        });
+
+        // if (!response.ok) {
+        //   throw new Error("Failed to upload PDF");
+        // }
+
+        // Reset the form
+        setEnteredUrl("");
+        setScrapedContent("");
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error uploading PDF:", error);
+        // Handle error (e.g., show an error message to the user)
+      }
     }
     setActiveIndex(newIndex);
   };
@@ -156,9 +187,27 @@ export function Panel() {
         )}
 
         {activeIndex === FEATURES.length - 1 ? (
-          <Button variant="success" onClick={() => handleSetActiveIndex(0)}>
-            Create Knowledge Base
-          </Button>
+          // <Button variant="success" onClick={() => handleSetActiveIndex(0)}>
+          //   Create Knowledge Base
+          // </Button>
+          <>
+            {isLoading ? (
+              <Button
+                disabled
+                variant="success"
+                onClick={() => handleSetActiveIndex(0)}
+              >
+                <span className="animate-spin mr-2">
+                  <LoaderIcon />
+                </span>
+                Creating
+              </Button>
+            ) : (
+              <Button variant="success" onClick={() => handleSetActiveIndex(0)}>
+                Create Knowledge Base
+              </Button>
+            )}
+          </>
         ) : (
           <Button
             variant="ghost"
