@@ -1,11 +1,10 @@
 import { Navbar } from "@/components/navbar";
 import { Metadata } from "next";
 import { Toaster } from "sonner";
-import "./globals.css";
+import "../globals.css";
 import { GeistSans } from "geist/font/sans";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import ContentWrapper from "@/components/layout/content-wrapper";
-import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -22,21 +21,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={GeistSans.className}>
-      <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Toaster position="top-center" />
-          {/* <Navbar /> */}
-          <ContentWrapper>
-            <TooltipProvider>{children}</TooltipProvider>
-          </ContentWrapper>
-        </ThemeProvider>
-      </body>
-    </html>
+    <>
+      <Navbar />
+      <ContentWrapper>{children}</ContentWrapper>
+    </>
   );
 }

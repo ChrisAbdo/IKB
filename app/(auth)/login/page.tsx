@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Form } from "@/components/form";
+import { Form } from "@/components/auth/form";
 import { SubmitButton } from "@/components/submit-button";
 import { useActionState, useEffect } from "react";
 import { login, LoginActionState } from "../actions";
@@ -15,7 +15,7 @@ export default function Page() {
     login,
     {
       status: "idle",
-    },
+    }
   );
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function Page() {
   }, [state.status, router]);
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-white dark:bg-zinc-900">
+    <div className="flex h-screen w-full items-center justify-center bg-white dark:bg-zinc-900 overflow-hidden">
       <div className="w-full max-w-md overflow-hidden rounded-2xl flex flex-col gap-12">
         <div className="flex flex-col items-center justify-center gap-2 px-4 text-center sm:px-16">
           <h3 className="text-xl font-semibold dark:text-zinc-50">Sign In</h3>
