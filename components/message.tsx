@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { BotIcon, UserIcon } from "./icons";
 import { ReactNode } from "react";
 import { Markdown } from "./markdown";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Bot } from "lucide-react";
 
 export const Message = ({
   role,
@@ -14,19 +16,28 @@ export const Message = ({
 }) => {
   return (
     <motion.div
-      // className={`flex flex-row gap-4 px-4 w-full md:w-[500px] md:px-0 first-of-type:pt-20`}
+      className="flex flex-col gap-4 w-full max-w-2xl mx-auto py-4"
       initial={{ y: 5, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
     >
-      <div className="size-[24px] flex flex-col justify-center items-center flex-shrink-0 text-zinc-400">
-        {role === "assistant" ? <BotIcon /> : <UserIcon />}
-      </div>
-
-      <div className="flex flex-col gap-6 w-full">
-        <div className="text-zinc-800 dark:text-zinc-300 flex flex-col gap-4">
-          <Markdown>{content as string}</Markdown>
+      {role === "assistant" ? (
+        <div className="flex items-start space-x-4">
+          <Avatar className="w-8 h-8">
+            <AvatarFallback>
+              <Bot className="size-5" />
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 bg-background  border rounded-lg px-4 py-2 text-sm">
+            <Markdown>{content as string}</Markdown>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex justify-end">
+          <div className="bg-secondary text-primary rounded-lg px-4 py-2 text-sm max-w-[75%]">
+            <Markdown>{content as string}</Markdown>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };

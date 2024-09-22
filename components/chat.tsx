@@ -9,19 +9,10 @@ import { FileIcon } from "@/components/icons";
 import { Message as PreviewMessage } from "@/components/message";
 import { useScrollToBottom } from "@/components/use-scroll-to-bottom";
 import { Session } from "next-auth";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
-
+import { ScrollArea } from "@/components/ui/scroll-area";
 const suggestedActions = [
   {
     title: "What's the summary",
@@ -91,6 +82,13 @@ export function Chat({
     const lines = value.split("\n");
     setRowCount(lines.length);
   };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      handleSubmit(event as unknown as React.FormEvent<HTMLFormElement>);
+    }
+  };
   return (
     <div className="h-screen">
       <div ref={messagesContainerRef}>
@@ -135,17 +133,17 @@ export function Chat({
 
       <form
         onSubmit={handleSubmit}
-        className="ml-12 fixed bottom-0 left-12 right-12 bg-white dark:bg-zinc-900 p-4 flex items-center space-x-2"
+        className="fixed bottom-0 left-0 right-0 max-w-3xl w-full mx-auto p-4 flex items-center space-x-2"
       >
         <div className="relative flex-1 flex items-center">
           <Textarea
-            className={`flex-1 pr-12 py-3 resize-none bg-zinc-100 dark:bg-zinc-800 border-none focus:ring-0 focus:outline-none ${
+            className={`ta flex-1 pr-12 py-3 resize-none bg-muted border-none focus:ring-0 focus:outline-none ${
               rowCount === 1 ? "rounded-full" : "rounded-3xl"
             }`}
             style={{
               minHeight: "46px",
               maxHeight: "200px",
-              paddingLeft: "3rem", // Add left padding to make space for the file icon
+              paddingLeft: "3.8rem",
             }}
             placeholder="Send a message..."
             value={input}
@@ -153,11 +151,13 @@ export function Chat({
               setInput(event.target.value);
               updateRowCount(event.target.value);
             }}
+            onKeyDown={handleKeyDown}
           />
-          <div
-            // className="absolute left-2 text-sm bg-white dark:bg-zinc-900 rounded-full size-9 flex-shrink-0 flex flex-row items-center justify-center cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-            className={`absolute left-2 text-sm bg-white dark:bg-zinc-900 rounded-full size-9 flex-shrink-0 flex flex-row items-center justify-center cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ${
-              rowCount === 1 ? "" : "bottom-2"
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`absolute left-2 text-sm rounded-full size-9 flex-shrink-0 flex flex-row items-center justify-center ${
+              rowCount === 1 ? "" : "bottom-1"
             }`}
             onClick={() => {
               setIsFilesVisible(!isFilesVisible);
@@ -166,7 +166,7 @@ export function Chat({
             <FileIcon />
             {selectedFilePathnames.length > 0 && (
               <motion.div
-                className="absolute text-xs -top-1 -right-1 bg-blue-500 size-4 rounded-full flex flex-row justify-center items-center text-blue-50"
+                className="absolute text-xs -top-1 -right-1 bg-primary size-4 rounded-full flex flex-row justify-center items-center text-primary-foreground"
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.5 }}
@@ -174,7 +174,7 @@ export function Chat({
                 {selectedFilePathnames.length}
               </motion.div>
             )}
-          </div>
+          </Button>
         </div>
       </form>
 

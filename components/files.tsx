@@ -90,7 +90,7 @@ export function Files({
 
   return (
     <Drawer open={isFilesVisible} onClose={() => setIsFilesVisible(false)}>
-      <DrawerContent className="h-[80vh]">
+      <DrawerContent className="h-1/2">
         <DrawerHeader className="flex justify-between items-center">
           <DrawerTitle>Manage Knowledge Base</DrawerTitle>
           <Input
