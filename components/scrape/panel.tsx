@@ -10,7 +10,7 @@ import { LoaderIcon } from "../icons";
 import { convertMarkdownToTxt } from "@/utils/md-to-txt";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "../ui/label";
-import { Plus } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
 
 function Buttons({
@@ -38,6 +38,7 @@ export function Panel() {
   const [scrapedContent, setScrapedContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [urls, setUrls] = useState<string[]>([""]);
+  const [isFetching, setIsFetching] = useState(false);
 
   const FEATURES = [
     {
@@ -51,23 +52,7 @@ export function Panel() {
       description: "Enter the URL you want to scrape content from.",
       content: (
         <div>
-          <RadioGroup
-            defaultValue="Manual"
-            className="flex justify-between mb-4"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="Manual" id="r1" />
-              <Label htmlFor="r1">Manual</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="comfortable" id="r2" />
-              <Label htmlFor="r2">Sitemap/XML</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="compact" id="r3" />
-              <Label htmlFor="r3">placeholder</Label>
-            </div>
-          </RadioGroup>
+          {/* ... existing RadioGroup ... */}
           {urls.map((url, index) => (
             <div key={index} className="flex items-center mb-2">
               <Input
@@ -81,13 +66,32 @@ export function Panel() {
                 }}
                 className="flex-grow"
               />
+              {index !== 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    const newUrls = urls.filter((_, i) => i !== index);
+                    setUrls(newUrls);
+                  }}
+                  className="ml-2"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+              )}
               {index === urls.length - 1 && (
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
-                  onClick={() => setUrls([...urls, ""])}
+                  onClick={() => {
+                    if (url.trim() !== "") {
+                      setUrls([...urls, ""]);
+                    }
+                  }}
                   className="ml-2"
+                  disabled={url.trim() === ""}
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
@@ -123,6 +127,7 @@ export function Panel() {
     setDirection(newIndex > activeIndex ? 1 : -1);
     if (activeIndex === 1 && newIndex === 2) {
       setIsLoading(true);
+      setIsFetching(true);
       try {
         const responses = await Promise.all(
           urls.map(async (url) => {
@@ -142,6 +147,7 @@ export function Panel() {
         setScrapedContent("Error fetching content. Please try again.");
       } finally {
         setIsLoading(false);
+        setIsFetching(false);
       }
     } else if (activeIndex === 3 && newIndex === 0) {
       setIsLoading(true);
@@ -273,9 +279,6 @@ export function Panel() {
         )}
 
         {activeIndex === FEATURES.length - 1 ? (
-          // <Button variant="success" onClick={() => handleSetActiveIndex(0)}>
-          //   Create Knowledge Base
-          // </Button>
           <>
             {isLoading ? (
               <Button
@@ -298,8 +301,18 @@ export function Panel() {
           <Button
             variant="ghost"
             onClick={() => handleSetActiveIndex(activeIndex + 1)}
+            disabled={isFetching}
           >
-            Next
+            {isFetching ? (
+              <>
+                <span className="animate-spin mr-2">
+                  <LoaderIcon />
+                </span>
+                Converting
+              </>
+            ) : (
+              "Next"
+            )}
           </Button>
         )}
       </div>
