@@ -18,6 +18,7 @@ import {
   FilePlus,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { History } from "../history";
 
 interface HistoryItem {
   id: string;
@@ -48,6 +49,7 @@ export default function NavLinks() {
       </Tooltip>
 
       {/* <HistoryButton history={history} /> */}
+      <History />
 
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>

@@ -9,6 +9,9 @@ import cx from "classnames";
 import { useParams, usePathname } from "next/navigation";
 import { Chat } from "@/schema";
 import { fetcher } from "@/utils/functions";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { Button } from "./ui/button";
+import { ChatBubbleIcon } from "@radix-ui/react-icons";
 
 export const History = () => {
   const { id } = useParams();
@@ -30,20 +33,30 @@ export const History = () => {
 
   return (
     <>
-      <div
-        className="dark:text-zinc-400 text-zinc-500 cursor-pointer"
-        onClick={() => {
-          setIsHistoryVisible(true);
-        }}
-      >
-        <MenuIcon />
-      </div>
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-lg"
+            aria-label="New point"
+            onClick={() => {
+              setIsHistoryVisible(true);
+            }}
+          >
+            <ChatBubbleIcon />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="right" sideOffset={5}>
+          Chat History
+        </TooltipContent>
+      </Tooltip>
 
       <AnimatePresence>
         {isHistoryVisible && (
           <>
             <motion.div
-              className="fixed bg-zinc-900/50 h-dvh w-dvw top-0 left-0 z-20"
+              className="fixed bg-background/90 h-dvh w-dvw top-0 left-0 z-20"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -53,7 +66,7 @@ export const History = () => {
             />
 
             <motion.div
-              className="fixed top-0 left-0 w-80 h-dvh p-3 flex flex-col gap-6 bg-white dark:bg-zinc-800 z-20"
+              className="fixed top-0 left-0 w-80 h-dvh p-3 flex flex-col gap-6 bg-background border-r z-20"
               initial={{ x: "-100%" }}
               animate={{ x: "0%" }}
               exit={{ x: "-100%" }}
@@ -78,7 +91,7 @@ export const History = () => {
                 </Link>
               </div>
 
-              <div className="flex flex-col overflow-y-scroll">
+              <div className="flex flex-col">
                 {error && error.status === 401 ? (
                   <div className="text-zinc-500 h-dvh w-full flex flex-row justify-center items-center text-sm gap-2">
                     <InfoIcon />
@@ -114,10 +127,10 @@ export const History = () => {
                       href={`/${chat.id}`}
                       key={chat.id}
                       className={cx(
-                        "p-2 dark:text-zinc-400 border-b dark:border-zinc-700 text-sm dark:hover:bg-zinc-700 hover:bg-zinc-200 last-of-type:border-b-0",
+                        "p-2 text-sm  rounded-lg hover:bg-muted transition-all duration-150 last-of-type:border-b-0 ",
                         {
-                          "dark:bg-zinc-700 bg-zinc-200": id === chat.id,
-                        },
+                          "bg-muted": id === chat.id,
+                        }
                       )}
                     >
                       {chat.messages[0].content as string}

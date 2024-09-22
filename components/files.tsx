@@ -1,29 +1,41 @@
 "use client";
 
+import { useState, useRef } from "react";
 import useSWR from "swr";
-import {
-  CheckedSquare,
-  InfoIcon,
-  LoaderIcon,
-  TrashIcon,
-  UncheckedSquare,
-  UploadIcon,
-} from "./icons";
-import { Dispatch, SetStateAction, useRef, useState } from "react";
 import { fetcher } from "@/utils/functions";
-import cx from "classnames";
-import { motion } from "framer-motion";
-import { useOnClickOutside, useWindowSize } from "usehooks-ts";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { TrashIcon, UploadIcon, LoaderIcon } from "lucide-react";
 
-export const Files = ({
+export function Files({
   selectedFilePathnames,
   setSelectedFilePathnames,
   setIsFilesVisible,
+  isFilesVisible,
 }: {
   selectedFilePathnames: string[];
-  setSelectedFilePathnames: Dispatch<SetStateAction<string[]>>;
-  setIsFilesVisible: Dispatch<SetStateAction<boolean>>;
-}) => {
+  setSelectedFilePathnames: React.Dispatch<React.SetStateAction<string[]>>;
+  setIsFilesVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  isFilesVisible: boolean;
+}) {
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
   const [deleteQueue, setDeleteQueue] = useState<Array<string>>([]);
@@ -31,229 +43,139 @@ export const Files = ({
     data: files,
     mutate,
     isLoading,
-  } = useSWR<
-    Array<{
-      pathname: string;
-    }>
-  >("api/files/list", fetcher, {
+  } = useSWR<Array<{ pathname: string }>>("api/files/list", fetcher, {
     fallbackData: [],
   });
 
-  const { width } = useWindowSize();
-  const isDesktop = width > 768;
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadQueue((currentQueue) => [...currentQueue, file.name]);
+      await fetch(`/api/files/upload?filename=${file.name}`, {
+        method: "POST",
+        body: file,
+      });
+      setUploadQueue((currentQueue) =>
+        currentQueue.filter((filename) => filename !== file.name)
+      );
+      mutate([...(files || []), { pathname: file.name }]);
+    }
+  };
 
-  const drawerRef = useRef(null);
-  useOnClickOutside([drawerRef], () => {
-    setIsFilesVisible(false);
-  });
+  const handleFileDelete = async (file: { pathname: string; url?: string }) => {
+    setDeleteQueue((currentQueue) => [...currentQueue, file.pathname]);
+    await fetch(`/api/files/delete?fileurl=${file.url}`, {
+      method: "DELETE",
+    });
+    setDeleteQueue((currentQueue) =>
+      currentQueue.filter((filename) => filename !== file.pathname)
+    );
+    setSelectedFilePathnames((currentSelections) =>
+      currentSelections.filter((path) => path !== file.pathname)
+    );
+    mutate(files?.filter((f) => f.pathname !== file.pathname));
+  };
+
+  const toggleFileSelection = (pathname: string) => {
+    setSelectedFilePathnames((currentSelections) => {
+      if (currentSelections.includes(pathname)) {
+        return currentSelections.filter((path) => path !== pathname);
+      } else {
+        return [...currentSelections, pathname];
+      }
+    });
+  };
 
   return (
-    <motion.div
-      className="fixed bg-zinc-900/50 h-dvh w-dvw top-0 left-0 z-40 flex flex-row justify-center items-center"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <motion.div
-        className={cx(
-          "fixed p-4 flex flex-col gap-4 bg-white dark:bg-zinc-800 z-30",
-          { "w-dvw h-96 bottom-0 right-0": !isDesktop },
-          { "w-[600px] h-96 rounded-lg": isDesktop }
-        )}
-        initial={{
-          y: "100%",
-          scale: isDesktop ? 0.9 : 1,
-          opacity: isDesktop ? 0 : 1,
-        }}
-        animate={{ y: "0%", scale: 1, opacity: 1 }}
-        exit={{
-          y: "100%",
-          scale: isDesktop ? 0.9 : 1,
-          opacity: isDesktop ? 0 : 1,
-        }}
-        transition={{ type: "spring", stiffness: 400, damping: 40 }}
-        ref={drawerRef}
-      >
-        <div className="flex flex-row justify-between items-center">
-          <div className="text-sm flex flex-row gap-3">
-            <div className="text-zinc-900 dark:text-zinc-300">
-              Manage Knowledge Base
-            </div>
-          </div>
-
-          <input
-            name="file"
-            ref={inputFileRef}
+    <Drawer open={isFilesVisible} onClose={() => setIsFilesVisible(false)}>
+      <DrawerContent className="h-[80vh]">
+        <DrawerHeader className="flex justify-between items-center">
+          <DrawerTitle>Manage Knowledge Base</DrawerTitle>
+          <Input
+            className="w-[250px]"
             type="file"
-            required
-            className="opacity-0 pointer-events-none w-1"
+            ref={inputFileRef}
             accept="application/pdf"
-            multiple={false}
-            onChange={async (event) => {
-              const file = event.target.files![0];
-
-              if (file) {
-                setUploadQueue((currentQueue) => [...currentQueue, file.name]);
-
-                await fetch(`/api/files/upload?filename=${file.name}`, {
-                  method: "POST",
-                  body: file,
-                });
-
-                setUploadQueue((currentQueue) =>
-                  currentQueue.filter((filename) => filename !== file.name)
-                );
-
-                mutate([...(files || []), { pathname: file.name }]);
-              }
-            }}
+            onChange={handleFileUpload}
           />
-
-          <div
-            className="bg-zinc-900 text-zinc-50 hover:bg-zinc-800 flex flex-row gap-2 items-center dark:text-zinc-800 text-sm dark:bg-zinc-100 rounded-md p-1 px-2 dark:hover:bg-zinc-200 cursor-pointer"
-            onClick={() => {
-              inputFileRef.current?.click();
-            }}
-          >
-            <UploadIcon />
-            <div>Upload a file</div>
-          </div>
+        </DrawerHeader>
+        <div className="p-4 overflow-y-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px]">Select</TableHead>
+                <TableHead>File Name</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center">
+                    Loading...
+                  </TableCell>
+                </TableRow>
+              ) : files?.length === 0 && uploadQueue.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center">
+                    No files found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                <>
+                  {files?.map((file) => (
+                    <TableRow key={file.pathname}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedFilePathnames.includes(
+                            file.pathname
+                          )}
+                          onCheckedChange={() =>
+                            toggleFileSelection(file.pathname)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>{file.pathname}</TableCell>
+                      <TableCell>
+                        {deleteQueue.includes(file.pathname) ? (
+                          <LoaderIcon className="animate-spin" />
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleFileDelete(file)}
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {uploadQueue.map((fileName) => (
+                    <TableRow key={fileName}>
+                      <TableCell>
+                        <LoaderIcon className="animate-spin h-4 w-4" />
+                      </TableCell>
+                      <TableCell>{fileName}</TableCell>
+                      <TableCell></TableCell>
+                    </TableRow>
+                  ))}
+                </>
+              )}
+            </TableBody>
+          </Table>
         </div>
-
-        <div className="flex flex-col h-full overflow-y-scroll">
-          {isLoading ? (
-            <div className="flex flex-col">
-              {[44, 32, 52].map((item) => (
-                <div
-                  key={item}
-                  className="flex flex-row gap-4 p-2 border-b dark:border-zinc-700 items-center"
-                >
-                  <div className="size-4 bg-zinc-200 dark:bg-zinc-600 animate-pulse" />
-                  <div
-                    className={`w-${item} h-4 bg-zinc-200 dark:bg-zinc-600 animate-pulse`}
-                  />
-                  <div className="h-[24px] w-1" />
-                </div>
-              ))}
-            </div>
-          ) : null}
-
-          {!isLoading &&
-          files?.length === 0 &&
-          uploadQueue.length === 0 &&
-          deleteQueue.length === 0 ? (
-            <div className="flex flex-col gap-4 items-center justify-center h-full">
-              <div className="flex flex-row gap-2 items-center text-zinc-500 dark:text-zinc-400 text-sm">
-                <InfoIcon />
-                <div>No files found</div>
-              </div>
-            </div>
-          ) : null}
-
-          {files?.map((file: any) => (
-            <div
-              key={file.pathname}
-              className={`flex flex-row gap-4 items-center p-2 border-b dark:border-zinc-700 ${
-                selectedFilePathnames.includes(file.pathname)
-                  ? "bg-zinc-100 dark:bg-zinc-700 dark:border-zinc-600"
-                  : ""
-              }`}
-            >
-              <div
-                className={cx(
-                  "cursor-pointer",
-                  selectedFilePathnames.includes(file.pathname) &&
-                    !deleteQueue.includes(file.pathname)
-                    ? "text-blue-600 dark:text-zinc-50"
-                    : "text-zinc-500"
-                )}
-                onClick={() => {
-                  setSelectedFilePathnames((currentSelections) => {
-                    if (currentSelections.includes(file.pathname)) {
-                      return currentSelections.filter(
-                        (path) => path !== file.pathname
-                      );
-                    } else {
-                      return [...currentSelections, file.pathname];
-                    }
-                  });
-                }}
-              >
-                {deleteQueue.includes(file.pathname) ? (
-                  <div className="animate-spin">
-                    <LoaderIcon />
-                  </div>
-                ) : selectedFilePathnames.includes(file.pathname) ? (
-                  <CheckedSquare />
-                ) : (
-                  <UncheckedSquare />
-                )}
-              </div>
-
-              <div className="flex flex-row justify-between w-full">
-                <div className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {file.pathname}
-                </div>
-              </div>
-
-              <div
-                className="text-zinc-500 hover:bg-red-100 dark:text-zinc-500 hover:dark:bg-zinc-700 hover:text-red-500 p-1 px-2 cursor-pointer rounded-md"
-                onClick={async () => {
-                  setDeleteQueue((currentQueue) => [
-                    ...currentQueue,
-                    file.pathname,
-                  ]);
-
-                  await fetch(`/api/files/delete?fileurl=${file.url}`, {
-                    method: "DELETE",
-                  });
-
-                  setDeleteQueue((currentQueue) =>
-                    currentQueue.filter(
-                      (filename) => filename !== file.pathname
-                    )
-                  );
-
-                  setSelectedFilePathnames((currentSelections) =>
-                    currentSelections.filter((path) => path !== file.pathname)
-                  );
-
-                  mutate(files.filter((f) => f.pathname !== file.pathname));
-                }}
-              >
-                <TrashIcon />
-              </div>
-            </div>
-          ))}
-
-          {uploadQueue.map((fileName) => (
-            <div
-              key={fileName}
-              className="flex flex-row justify-between p-2 gap-4 items-center"
-            >
-              <div className="text-zinc-500">
-                <div className="animate-spin">
-                  <LoaderIcon />
-                </div>
-              </div>
-
-              <div className="flex flex-row justify-between w-full">
-                <div className="text-sm text-zinc-400 dark:text-zinc-400">
-                  {fileName}
-                </div>
-              </div>
-
-              <div className="h-[24px] w-2" />
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-row justify-end">
-          <div className="text-zinc-500 dark:text-zinc-400 text-sm">
+        <DrawerFooter className="flex justify-between items-center">
+          <div className="text-sm text-muted-foreground">
             {`${selectedFilePathnames.length}/${files?.length}`} Selected
           </div>
-        </div>
-      </motion.div>
-    </motion.div>
+          <div>
+            <Button onClick={() => setIsFilesVisible(false)}>Close</Button>
+          </div>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
-};
+}
