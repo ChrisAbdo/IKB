@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BotIcon, UserIcon } from "./icons";
 import { ReactNode } from "react";
 import { Markdown } from "./markdown";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
