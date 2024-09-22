@@ -33,7 +33,7 @@ export const History = () => {
 
   return (
     <>
-      <Tooltip delayDuration={0}>
+      <Tooltip>
         <TooltipTrigger asChild>
           <Button
             variant="ghost"

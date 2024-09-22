@@ -9,7 +9,12 @@ import { FileIcon } from "@/components/icons";
 import { Message as PreviewMessage } from "@/components/message";
 import { useScrollToBottom } from "@/components/use-scroll-to-bottom";
 import { Session } from "next-auth";
-
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -153,28 +158,35 @@ export function Chat({
             }}
             onKeyDown={handleKeyDown}
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`absolute left-2 text-sm rounded-full size-9 flex-shrink-0 flex flex-row items-center justify-center ${
-              rowCount === 1 ? "" : "bottom-1"
-            }`}
-            onClick={() => {
-              setIsFilesVisible(!isFilesVisible);
-            }}
-          >
-            <FileIcon />
-            {selectedFilePathnames.length > 0 && (
-              <motion.div
-                className="absolute text-xs -top-1 -right-1 bg-primary size-4 rounded-full flex flex-row justify-center items-center text-primary-foreground"
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5 }}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`absolute left-2 text-sm rounded-full size-9 flex-shrink-0 flex flex-row items-center justify-center ${
+                  rowCount === 1 ? "" : "bottom-1"
+                }`}
+                onClick={() => {
+                  setIsFilesVisible(!isFilesVisible);
+                }}
               >
-                {selectedFilePathnames.length}
-              </motion.div>
-            )}
-          </Button>
+                <FileIcon />
+                {selectedFilePathnames.length > 0 && (
+                  <motion.div
+                    className="absolute text-xs -top-1 -right-1 bg-primary size-4 rounded-full flex flex-row justify-center items-center text-primary-foreground"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    {selectedFilePathnames.length}
+                  </motion.div>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Browse Files</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </form>
 

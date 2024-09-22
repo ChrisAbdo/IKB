@@ -1,6 +1,5 @@
 import { auth } from "@/app/(auth)/auth";
 import { insertChunks } from "@/app/db";
-import { getPdfContentFromUrl } from "@/utils/pdf";
 import { openai } from "@ai-sdk/openai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { put } from "@vercel/blob";
@@ -30,7 +29,18 @@ export async function POST(request: Request) {
     access: "public",
   });
 
-  const content = await getPdfContentFromUrl(downloadUrl);
+  if (!filename) {
+    return new Response("Filename is missing", { status: 400 });
+  }
+
+  let content: string;
+  if (filename.endsWith(".txt")) {
+    const response = await fetch(downloadUrl);
+    content = await response.text();
+  } else {
+    return new Response("Unsupported file type", { status: 400 });
+  }
+
   const textSplitter = new RecursiveCharacterTextSplitter({
     chunkSize: 1000,
   });

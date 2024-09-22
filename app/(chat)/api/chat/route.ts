@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   const result = await streamText({
     model: customModel,
     system:
-      "you are a friendly assistant! keep your responses concise and helpful.",
+      "You are a helpful assistant with access to a knowledge base. Use the provided information to answer questions accurately.",
     messages: convertToCoreMessages(messages),
     experimental_providerMetadata: {
       files: {
@@ -28,10 +28,6 @@ export async function POST(request: Request) {
         messages: [...messages, { role: "assistant", content: text }],
         author: session.user?.email!,
       });
-    },
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "stream-text",
     },
   });
 

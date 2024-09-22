@@ -30,7 +30,7 @@ export default function NavLinks() {
   const pathname = usePathname();
   return (
     <nav className="grid gap-2 p-2">
-      <Tooltip delayDuration={0}>
+      <Tooltip>
         <TooltipTrigger asChild>
           <Link href="/create">
             <Button
@@ -72,9 +72,9 @@ export default function NavLinks() {
           Playground
         </TooltipContent>
       </Tooltip>
-      <Tooltip delayDuration={0}>
+      <Tooltip>
         <TooltipTrigger asChild>
-          <Link href="/create">
+          <Link href="/create-markdown">
             <Button
               variant="ghost"
               size="icon"
@@ -89,7 +89,7 @@ export default function NavLinks() {
           Create Markdown
         </TooltipContent>
       </Tooltip>
-      <Tooltip delayDuration={0}>
+      <Tooltip>
         <TooltipTrigger asChild>
           <Button
             variant="ghost"

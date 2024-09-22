@@ -97,7 +97,7 @@ export function Files({
             className="w-[250px]"
             type="file"
             ref={inputFileRef}
-            accept="application/pdf"
+            accept=".txt"
             onChange={handleFileUpload}
           />
         </DrawerHeader>

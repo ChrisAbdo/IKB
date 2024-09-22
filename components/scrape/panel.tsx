@@ -6,8 +6,12 @@ import { Input } from "../ui/input";
 import { Skeleton } from "../ui/skeleton";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "../ui/button";
-import { convertMarkdownToPDF } from "@/utils/markdown-to-pdf";
 import { LoaderIcon } from "../icons";
+import { convertMarkdownToTxt } from "@/utils/md-to-txt";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "../ui/label";
+import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 function Buttons({
   onClick,
@@ -33,6 +37,7 @@ export function Panel() {
   const [enteredUrl, setEnteredUrl] = useState("");
   const [scrapedContent, setScrapedContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [urls, setUrls] = useState<string[]>([""]);
 
   const FEATURES = [
     {
@@ -45,12 +50,51 @@ export function Panel() {
       title: "Enter your URLs",
       description: "Enter the URL you want to scrape content from.",
       content: (
-        <Input
-          type="text"
-          placeholder="Enter URL here"
-          value={enteredUrl}
-          onChange={(e) => setEnteredUrl(e.target.value)}
-        />
+        <div>
+          <RadioGroup
+            defaultValue="Manual"
+            className="flex justify-between mb-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="Manual" id="r1" />
+              <Label htmlFor="r1">Manual</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="comfortable" id="r2" />
+              <Label htmlFor="r2">Sitemap/XML</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="compact" id="r3" />
+              <Label htmlFor="r3">placeholder</Label>
+            </div>
+          </RadioGroup>
+          {urls.map((url, index) => (
+            <div key={index} className="flex items-center mb-2">
+              <Input
+                type="text"
+                placeholder="Enter URL here"
+                value={url}
+                onChange={(e) => {
+                  const newUrls = [...urls];
+                  newUrls[index] = e.target.value;
+                  setUrls(newUrls);
+                }}
+                className="flex-grow"
+              />
+              {index === urls.length - 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setUrls([...urls, ""])}
+                  className="ml-2"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
       ),
     },
     {
@@ -80,12 +124,19 @@ export function Panel() {
     if (activeIndex === 1 && newIndex === 2) {
       setIsLoading(true);
       try {
-        const response = await fetch(`https://r.jina.ai/${enteredUrl}`);
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const text = await response.text();
-        setScrapedContent(text);
+        const responses = await Promise.all(
+          urls.map(async (url) => {
+            const content = await fetch(`https://r.jina.ai/${url}`).then(
+              (res) => res.text()
+            );
+            return { url, content };
+          })
+        );
+        setScrapedContent(
+          responses
+            .map((r) => `URL: ${r.url}\n\n${r.content}`)
+            .join("\n\n--- Next URL ---\n\n")
+        );
       } catch (error) {
         console.error("Error fetching content:", error);
         setScrapedContent("Error fetching content. Please try again.");
@@ -93,33 +144,68 @@ export function Panel() {
         setIsLoading(false);
       }
     } else if (activeIndex === 3 && newIndex === 0) {
-      // Convert markdown to PDF and upload
-      const pdfBlob = convertMarkdownToPDF(scrapedContent);
-      const filename = `${enteredUrl
-        .replace(/[^a-z0-9]/gi, "_")
-        .toLowerCase()}.pdf`;
-
-      const formData = new FormData();
-      formData.append("file", pdfBlob, filename);
+      setIsLoading(true);
+      const errors = [];
+      const successfulUploads = [];
 
       try {
-        setIsLoading(true);
-        const response = await fetch(`/api/files/upload?filename=${filename}`, {
-          method: "POST",
-          body: formData,
-        });
+        for (const url of urls) {
+          const content = await fetch(`https://r.jina.ai/${url}`).then((res) =>
+            res.text()
+          );
+          const plainText = `Source URL: ${url}\n\n${await convertMarkdownToTxt(
+            content
+          )}`;
+          const urlObj = new URL(url);
+          const pathParts = urlObj.pathname.split("/").filter(Boolean);
+          const filename = `${urlObj.hostname}${
+            pathParts.length > 0 ? "_" + pathParts.join("_") : ""
+          }.txt`;
 
-        // if (!response.ok) {
-        //   throw new Error("Failed to upload PDF");
-        // }
+          const response = await fetch(
+            `/api/files/upload?filename=${filename}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "text/plain",
+              },
+              body: plainText,
+            }
+          );
+
+          if (response.ok) {
+            successfulUploads.push(url);
+          } else {
+            const errorText = await response.text();
+            errors.push(
+              `Failed to upload file for URL: ${url}. Error: ${errorText}`
+            );
+          }
+        }
+
+        // Display summary
+        if (successfulUploads.length > 0) {
+          toast.success(
+            `Successfully uploaded ${successfulUploads.length} file(s)`
+          );
+        }
+        if (errors.length > 0) {
+          toast.error(
+            `Failed to upload ${errors.length} file(s). Check console for details.`
+          );
+          console.error("Upload errors:", errors);
+        }
 
         // Reset the form
-        setEnteredUrl("");
+        setUrls([""]);
         setScrapedContent("");
-        setIsLoading(false);
       } catch (error) {
-        console.error("Error uploading PDF:", error);
-        // Handle error (e.g., show an error message to the user)
+        console.error("Error uploading files:", error);
+        toast.error(
+          "An error occurred while uploading files. Please try again."
+        );
+      } finally {
+        setIsLoading(false);
       }
     }
     setActiveIndex(newIndex);
