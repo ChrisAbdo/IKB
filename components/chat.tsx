@@ -17,6 +17,7 @@ import {
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Badge } from "./ui/badge";
+import { FileContext } from "./chat/file-context";
 
 const suggestedActions = [
   {
@@ -46,6 +47,16 @@ export function Chat({
   const [isFilesVisible, setIsFilesVisible] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [rowCount, setRowCount] = useState(1);
+  const [allFiles, setAllFiles] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchAllFiles = async () => {
+      const response = await fetch("/api/files/list");
+      const files = await response.json();
+      setAllFiles(files.map((file: any) => file.pathname));
+    };
+    fetchAllFiles();
+  }, []);
 
   useEffect(() => {
     if (isMounted !== false && session && session.user) {
@@ -94,20 +105,25 @@ export function Chat({
       handleSubmit(event as unknown as React.FormEvent<HTMLFormElement>);
     }
   };
+
+  const onFileToggle = (file: string) => {
+    setSelectedFilePathnames((prev) =>
+      prev.includes(file) ? prev.filter((f) => f !== file) : [...prev, file]
+    );
+  };
+
+  const onManageFiles = () => {
+    setIsFilesVisible(true);
+  };
   return (
     <div className="h-screen">
-      <header className="sticky w-full border-b top-0 z-10 flex h-[53px] items-center justify-between px-4 overflow-x-auto">
-        <div className="flex items-center gap-2 overflow-x-auto">
-          {selectedFilePathnames.map((filepath, index) => (
-            <Badge
-              key={index}
-              variant="secondary"
-              className="whitespace-nowrap"
-            >
-              {filepath.split("/").pop()}
-            </Badge>
-          ))}
-        </div>
+      <header className="sticky w-full bg-gray-50 dark:bg-neutral-900 border-b top-0 z-10 flex h-[53px] items-center justify-between px-2 overflow-x-auto">
+        <FileContext
+          activeFiles={selectedFilePathnames}
+          allFiles={allFiles}
+          onFileToggle={onFileToggle}
+          onManageFiles={onManageFiles}
+        />{" "}
         <Button>test</Button>
       </header>
 
