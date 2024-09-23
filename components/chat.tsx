@@ -124,8 +124,8 @@ export function Chat({
     setIsFilesVisible(true);
   };
   return (
-    <div className="h-screen">
-      <header className="sticky w-full bg-gray-50 dark:bg-neutral-900 border-b top-0 z-10 flex h-[53px] items-center justify-between px-2 overflow-x-auto">
+    <div className="h-screen flex flex-col">
+      <header className="sticky w-full flex h-[53px] items-center justify-between px-2 -z-50">
         <FileContext
           activeFiles={selectedFilePathnames}
           allFiles={allFiles}
@@ -138,7 +138,7 @@ export function Chat({
         </div>
       </header>
 
-      <div ref={messagesContainerRef}>
+      <div className="flex-1 overflow-y-auto" ref={messagesContainerRef}>
         {messages.map((message, index) => (
           <PreviewMessage
             key={`${id}-${index}`}
@@ -149,96 +149,106 @@ export function Chat({
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 max-w-3xl w-full mx-auto p-4 flex flex-col space-y-4">
-        {messages.length === 0 && (
-          <div className="grid sm:grid-cols-3 gap-2 w-full px-4 md:px-0 mx-auto md:max-w-[500px]">
-            {suggestedActions.map((suggestedAction, index) => (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 * index }}
-                key={index}
-                className={index > 1 ? "hidden sm:block" : "block"}
-              >
-                <button
-                  onClick={async () => {
-                    append({
-                      role: "user",
-                      content: suggestedAction.action,
-                    });
-                  }}
-                  className="bg-background w-full text-left border  text-zinc-800 dark:text-zinc-300 rounded-lg p-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex flex-col"
-                >
-                  <span className="font-medium">{suggestedAction.title}</span>
-                  <span className="text-zinc-500 dark:text-zinc-400">
-                    {suggestedAction.label}
-                  </span>
-                </button>
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="flex items-center space-x-2">
-          <div className="relative flex-1 flex items-center">
-            <Textarea
-              className={`ta flex-1 pr-12 py-3 resize-none bg-muted border-none focus:ring-0 focus:outline-none ${
-                rowCount === 1 ? "rounded-full" : "rounded-3xl"
-              }`}
-              style={{
-                minHeight: "46px",
-                maxHeight: "200px",
-                paddingLeft: "3.8rem",
-              }}
-              placeholder="Send a message..."
-              value={input}
-              onChange={(event) => {
-                setInput(event.target.value);
-                updateRowCount(event.target.value);
-              }}
-              onKeyDown={handleKeyDown}
-            />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`absolute left-2 text-sm rounded-full size-9 flex-shrink-0 flex flex-row items-center justify-center ${
-                    rowCount === 1 ? "" : "bottom-1"
-                  }`}
-                  onClick={() => {
-                    setIsFilesVisible(!isFilesVisible);
-                  }}
-                >
-                  <FileIcon />
-                  {selectedFilePathnames.length > 0 && (
-                    <motion.div
-                      className="absolute text-xs -top-1 -right-1 bg-primary size-4 rounded-full flex flex-row justify-center items-center text-primary-foreground"
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.5 }}
+      <div className="relative">
+        <div className="absolute bottom-full left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent pointer-events-none"></div>
+        <div className="bg-background w-full pl-[53px]">
+          <div className="max-w-3xl w-full mx-auto p-4 flex flex-col space-y-4">
+            {messages.length === 0 && (
+              <div className="grid sm:grid-cols-3 gap-2 w-full px-4 md:px-0 mx-auto md:max-w-[500px]">
+                {suggestedActions.map((suggestedAction, index) => (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 * index }}
+                    key={index}
+                    className={index > 1 ? "hidden sm:block" : "block"}
+                  >
+                    <button
+                      onClick={async () => {
+                        append({
+                          role: "user",
+                          content: suggestedAction.action,
+                        });
+                      }}
+                      className="bg-background w-full text-left border text-zinc-800 dark:text-zinc-300 rounded-lg p-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex flex-col"
                     >
-                      {selectedFilePathnames.length}
-                    </motion.div>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Browse Files</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </form>
-      </div>
+                      <span className="font-medium">
+                        {suggestedAction.title}
+                      </span>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        {suggestedAction.label}
+                      </span>
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+            )}
 
-      <AnimatePresence>
-        <Files
-          isFilesVisible={isFilesVisible}
-          setIsFilesVisible={setIsFilesVisible}
-          selectedFilePathnames={selectedFilePathnames}
-          setSelectedFilePathnames={setSelectedFilePathnames}
-        />
-      </AnimatePresence>
+            <form
+              onSubmit={handleSubmit}
+              className="flex items-center space-x-2"
+            >
+              <div className="relative flex-1 flex items-center">
+                <Textarea
+                  className={`ta border flex-1 pr-12 py-3 resize-none bg-background focus:ring-0 focus:outline-none ${
+                    rowCount === 1 ? "rounded-full" : "rounded-3xl"
+                  }`}
+                  style={{
+                    minHeight: "46px",
+                    maxHeight: "200px",
+                    paddingLeft: "3.8rem",
+                  }}
+                  placeholder="Send a message..."
+                  value={input}
+                  onChange={(event) => {
+                    setInput(event.target.value);
+                    updateRowCount(event.target.value);
+                  }}
+                  onKeyDown={handleKeyDown}
+                />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`absolute left-2 text-sm rounded-full size-9 flex-shrink-0 flex flex-row items-center justify-center ${
+                        rowCount === 1 ? "" : "bottom-1"
+                      }`}
+                      onClick={() => {
+                        setIsFilesVisible(!isFilesVisible);
+                      }}
+                    >
+                      <FileIcon />
+                      {selectedFilePathnames.length > 0 && (
+                        <motion.div
+                          className="absolute text-xs -top-1 -right-1 bg-primary size-4 rounded-full flex flex-row justify-center items-center text-primary-foreground"
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.5 }}
+                        >
+                          {selectedFilePathnames.length}
+                        </motion.div>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Browse Files</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <AnimatePresence>
+          <Files
+            isFilesVisible={isFilesVisible}
+            setIsFilesVisible={setIsFilesVisible}
+            selectedFilePathnames={selectedFilePathnames}
+            setSelectedFilePathnames={setSelectedFilePathnames}
+          />
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
