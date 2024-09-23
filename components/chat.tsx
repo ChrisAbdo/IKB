@@ -18,6 +18,8 @@ import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Badge } from "./ui/badge";
 import { FileContext } from "./chat/file-context";
+import { ShareChat } from "./chat/share-chat";
+import { ModeToggle } from "./layout/mode-toggle";
 
 const suggestedActions = [
   {
@@ -123,8 +125,11 @@ export function Chat({
           allFiles={allFiles}
           onFileToggle={onFileToggle}
           onManageFiles={onManageFiles}
-        />{" "}
-        <Button>test</Button>
+        />
+        <div className="flex gap-2">
+          {messages.length > 0 && <ShareChat />}
+          <ModeToggle />
+        </div>
       </header>
 
       <div ref={messagesContainerRef}>
