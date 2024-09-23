@@ -1,229 +1,398 @@
 "use client";
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { TransitionPanel } from "../ui/transition-panel";
 import useMeasure from "react-use-measure";
 import { Input } from "../ui/input";
 import { Skeleton } from "../ui/skeleton";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "../ui/button";
-import { LoaderIcon } from "../icons";
+import { LoaderIcon, SearchIcon, XIcon } from "lucide-react";
 import { convertMarkdownToTxt } from "@/utils/md-to-txt";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "../ui/label";
 import { Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "../ui/separator";
 
-function Buttons({
-  onClick,
-  children,
-}: {
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      type="button"
-      className="relative flex h-8 shrink-0 scale-100 select-none appearance-none items-center justify-center rounded-lg border border-zinc-950/10 bg-transparent px-2 text-sm text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 focus-visible:ring-2 active:scale-[0.98] dark:border-zinc-50/10 dark:text-zinc-50 dark:hover:bg-zinc-800"
-    >
-      {children}
-    </button>
-  );
-}
 export function Panel() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [ref, bounds] = useMeasure();
-  const [enteredUrl, setEnteredUrl] = useState("");
   const [scrapedContent, setScrapedContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [urls, setUrls] = useState<string[]>([""]);
   const [isFetching, setIsFetching] = useState(false);
+  const [inputMethod, setInputMethod] = useState("Manual");
+  const [manualUrls, setManualUrls] = useState<string[]>([""]);
+  const [sitemapUrl, setSitemapUrl] = useState("");
+  const [scrapedUrls, setScrapedUrls] = useState<string[]>([]);
+  const [isScraping, setIsScraping] = useState(false);
+  const [selectedScrapedUrls, setSelectedScrapedUrls] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const FEATURES = [
-    {
-      title: "Easily turn your documentation into a knowledge base",
-      description:
-        "Get started by importing your existing documentation and let us do the rest. We'll automatically organize your content into a ready to use knowledge base.",
-      content: null,
-    },
-    {
-      title: "Enter your URLs",
-      description: "Enter the URL you want to scrape content from.",
-      content: (
-        <div>
-          {/* ... existing RadioGroup ... */}
-          {urls.map((url, index) => (
-            <div key={index} className="flex items-center mb-2">
-              <Input
-                type="text"
-                placeholder="Enter URL here"
-                value={url}
-                onChange={(e) => {
-                  const newUrls = [...urls];
-                  newUrls[index] = e.target.value;
-                  setUrls(newUrls);
-                }}
-                className="flex-grow"
-              />
-              {index !== 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    const newUrls = urls.filter((_, i) => i !== index);
-                    setUrls(newUrls);
-                  }}
-                  className="ml-2"
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-              )}
-              {index === urls.length - 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    if (url.trim() !== "") {
-                      setUrls([...urls, ""]);
-                    }
-                  }}
-                  className="ml-2"
-                  disabled={url.trim() === ""}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
-      ),
-    },
-    {
-      title: "Scraped Content",
-      description: "Here's the content scraped from the provided URL.",
-      content: isLoading ? (
-        <Skeleton className="h-[200px] w-full" />
-      ) : (
-        <ScrollArea className="h-[200px] w-full">
-          <pre className="whitespace-pre-wrap break-words">
-            {scrapedContent}
-          </pre>
-          <ScrollBar orientation="vertical" />
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      ),
-    },
-    {
-      title: "Create Knowledge Base",
-      description:
-        "This is the final step. Click the button below to create your knowledge base.",
-    },
-  ];
+  const handleSitemapScrape = useCallback(async () => {
+    setIsScraping(true);
+    try {
+      const response = await fetch(
+        `/api/scrape?url=${encodeURIComponent(sitemapUrl)}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to scrape sitemap");
+      }
+      const urls = await response.json();
+      setScrapedUrls(urls);
+    } catch (error) {
+      console.error("Error scraping sitemap:", error);
+      toast.error("Failed to scrape sitemap. Please try again.");
+    } finally {
+      setIsScraping(false);
+    }
+  }, [sitemapUrl]);
 
-  const handleSetActiveIndex = async (newIndex: number) => {
-    setDirection(newIndex > activeIndex ? 1 : -1);
-    if (activeIndex === 1 && newIndex === 2) {
-      setIsLoading(true);
-      setIsFetching(true);
-      try {
-        const responses = await Promise.all(
-          urls.map(async (url) => {
+  const handleSetActiveIndex = useCallback(
+    async (newIndex: number) => {
+      setDirection(newIndex > activeIndex ? 1 : -1);
+      if (activeIndex === 1 && newIndex === 2) {
+        setIsLoading(true);
+        setIsFetching(true);
+        try {
+          const urlsToFetch =
+            inputMethod === "Manual" ? manualUrls : selectedScrapedUrls;
+          const responses = await Promise.all(
+            urlsToFetch.map(async (url) => {
+              const content = await fetch(`https://r.jina.ai/${url}`).then(
+                (res) => res.text()
+              );
+              return { url, content };
+            })
+          );
+          setScrapedContent(
+            responses
+              .map((r) => `URL: ${r.url}\n\n${r.content}`)
+              .join("\n\n--- Next URL ---\n\n")
+          );
+        } catch (error) {
+          console.error("Error fetching content:", error);
+          setScrapedContent("Error fetching content. Please try again.");
+        } finally {
+          setIsLoading(false);
+          setIsFetching(false);
+        }
+      } else if (activeIndex === 3 && newIndex === 0) {
+        setIsLoading(true);
+        const errors = [];
+        const successfulUploads = [];
+
+        try {
+          const urlsToUpload =
+            inputMethod === "Manual" ? manualUrls : selectedScrapedUrls;
+          for (const url of urlsToUpload) {
             const content = await fetch(`https://r.jina.ai/${url}`).then(
               (res) => res.text()
             );
-            return { url, content };
-          })
-        );
-        setScrapedContent(
-          responses
-            .map((r) => `URL: ${r.url}\n\n${r.content}`)
-            .join("\n\n--- Next URL ---\n\n")
-        );
-      } catch (error) {
-        console.error("Error fetching content:", error);
-        setScrapedContent("Error fetching content. Please try again.");
-      } finally {
-        setIsLoading(false);
-        setIsFetching(false);
-      }
-    } else if (activeIndex === 3 && newIndex === 0) {
-      setIsLoading(true);
-      const errors = [];
-      const successfulUploads = [];
+            const plainText = `Source URL: ${url}\n\n${await convertMarkdownToTxt(
+              content
+            )}`;
+            const urlObj = new URL(url);
+            const pathParts = urlObj.pathname.split("/").filter(Boolean);
+            const filename = `${urlObj.hostname}${
+              pathParts.length > 0 ? "_" + pathParts.join("_") : ""
+            }.txt`;
 
-      try {
-        for (const url of urls) {
-          const content = await fetch(`https://r.jina.ai/${url}`).then((res) =>
-            res.text()
-          );
-          const plainText = `Source URL: ${url}\n\n${await convertMarkdownToTxt(
-            content
-          )}`;
-          const urlObj = new URL(url);
-          const pathParts = urlObj.pathname.split("/").filter(Boolean);
-          const filename = `${urlObj.hostname}${
-            pathParts.length > 0 ? "_" + pathParts.join("_") : ""
-          }.txt`;
+            const response = await fetch(
+              `/api/files/upload?filename=${filename}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "text/plain",
+                },
+                body: plainText,
+              }
+            );
 
-          const response = await fetch(
-            `/api/files/upload?filename=${filename}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "text/plain",
-              },
-              body: plainText,
+            if (response.ok) {
+              successfulUploads.push(url);
+            } else {
+              const errorText = await response.text();
+              errors.push(
+                `Failed to upload file for URL: ${url}. Error: ${errorText}`
+              );
             }
-          );
+          }
 
-          if (response.ok) {
-            successfulUploads.push(url);
-          } else {
-            const errorText = await response.text();
-            errors.push(
-              `Failed to upload file for URL: ${url}. Error: ${errorText}`
+          if (successfulUploads.length > 0) {
+            toast.success(
+              `Successfully uploaded ${successfulUploads.length} file(s)`
             );
           }
-        }
+          if (errors.length > 0) {
+            toast.error(
+              `Failed to upload ${errors.length} file(s). Check console for details.`
+            );
+            console.error("Upload errors:", errors);
+          }
 
-        // Display summary
-        if (successfulUploads.length > 0) {
-          toast.success(
-            `Successfully uploaded ${successfulUploads.length} file(s)`
-          );
-        }
-        if (errors.length > 0) {
+          setManualUrls([""]);
+          setSelectedScrapedUrls([]);
+          setScrapedContent("");
+        } catch (error) {
+          console.error("Error uploading files:", error);
           toast.error(
-            `Failed to upload ${errors.length} file(s). Check console for details.`
+            "An error occurred while uploading files. Please try again."
           );
-          console.error("Upload errors:", errors);
+        } finally {
+          setIsLoading(false);
         }
-
-        // Reset the form
-        setUrls([""]);
-        setScrapedContent("");
-      } catch (error) {
-        console.error("Error uploading files:", error);
-        toast.error(
-          "An error occurred while uploading files. Please try again."
-        );
-      } finally {
-        setIsLoading(false);
       }
-    }
-    setActiveIndex(newIndex);
-  };
+      setActiveIndex(newIndex);
+    },
+    [activeIndex, inputMethod, manualUrls, selectedScrapedUrls]
+  );
 
   useEffect(() => {
     if (activeIndex < 0) setActiveIndex(0);
     if (activeIndex >= FEATURES.length) setActiveIndex(FEATURES.length - 1);
   }, [activeIndex]);
 
+  const filteredScrapedUrls = useMemo(() => {
+    return scrapedUrls.filter((url) =>
+      url.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [scrapedUrls, searchTerm]);
+
+  const FEATURES = useMemo(
+    () => [
+      {
+        title: "Easily turn your documentation into a knowledge base",
+        description:
+          "Get started by importing your existing documentation and let us do the rest. We'll automatically organize your content into a ready to use knowledge base.",
+        content: null,
+      },
+      {
+        title: "Enter your URLs",
+        description: "Enter the URL you want to scrape content from.",
+        content: (
+          <div>
+            <RadioGroup
+              value={inputMethod}
+              onValueChange={setInputMethod}
+              className="flex justify-between mb-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Manual" id="r1" />
+                <Label htmlFor="r1">Manual</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Sitemap" id="r2" />
+                <Label htmlFor="r2">Sitemap/XML</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Placeholder" id="r3" />
+                <Label htmlFor="r3">Placeholder</Label>
+              </div>
+            </RadioGroup>
+
+            <Separator className="my-4" />
+
+            {inputMethod === "Manual" && (
+              <>
+                {manualUrls.map((url, index) => (
+                  <div key={index} className="flex items-center mb-2">
+                    <Input
+                      type="text"
+                      placeholder="Enter URL here"
+                      value={url}
+                      onChange={(e) => {
+                        const newUrls = [...manualUrls];
+                        newUrls[index] = e.target.value;
+                        setManualUrls(newUrls);
+                      }}
+                      className="flex-grow bg-muted"
+                    />
+                    {index !== 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const newUrls = manualUrls.filter(
+                            (_, i) => i !== index
+                          );
+                          setManualUrls(newUrls);
+                        }}
+                        className="ml-2"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {index === manualUrls.length - 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          if (url.trim() !== "") {
+                            setManualUrls([...manualUrls, ""]);
+                          }
+                        }}
+                        className="ml-2"
+                        disabled={url.trim() === ""}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </>
+            )}
+
+            {inputMethod === "Sitemap" && (
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="text"
+                    placeholder="Enter sitemap URL here"
+                    className="flex-grow bg-muted"
+                    value={sitemapUrl}
+                    onChange={(e) => setSitemapUrl(e.target.value)}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={handleSitemapScrape}
+                    disabled={isScraping || !sitemapUrl}
+                  >
+                    {isScraping ? "Scraping..." : "Scrape"}
+                  </Button>
+                </div>
+
+                {isScraping ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ) : (
+                  scrapedUrls.length > 0 && (
+                    <div className="mt-2">
+                      <Separator className="my-4" />
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className="relative flex-grow">
+                          <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4" />
+                          <Input
+                            type="text"
+                            placeholder="Search URLs..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10 pr-3 w-full"
+                          />
+                        </div>
+                        {searchTerm && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSearchTerm("")}
+                          >
+                            <XIcon className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="max-h-[400px] overflow-y-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[50px]">Select</TableHead>
+                              <TableHead>URL</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredScrapedUrls.map((url, index) => (
+                              <TableRow key={index}>
+                                <TableCell>
+                                  <Checkbox
+                                    checked={selectedScrapedUrls.includes(url)}
+                                    onCheckedChange={(checked) => {
+                                      setSelectedScrapedUrls((prev) =>
+                                        checked
+                                          ? [...prev, url]
+                                          : prev.filter((u) => u !== url)
+                                      );
+                                    }}
+                                  />
+                                </TableCell>
+                                <TableCell className="truncate">
+                                  {url}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+
+            {inputMethod === "Placeholder" && (
+              <div className="p-4 bg-gray-100 rounded-md">
+                <p>Hello</p>
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        title: "Scraped Content",
+        description: "Here's the content scraped from the provided URL.",
+        content: (
+          <ScrollArea className="h-[400px] w-full">
+            <pre className="whitespace-pre-wrap break-words">
+              {scrapedContent}
+            </pre>
+            <ScrollBar orientation="vertical" />
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        ),
+      },
+      {
+        title: "Create Knowledge Base",
+        description:
+          "This is the final step. Click the button below to create your knowledge base.",
+      },
+    ],
+    [
+      inputMethod,
+      manualUrls,
+      sitemapUrl,
+      isScraping,
+      scrapedUrls,
+      selectedScrapedUrls,
+      scrapedContent,
+      handleSitemapScrape,
+      searchTerm,
+      filteredScrapedUrls,
+    ]
+  );
+
   return (
-    <div className="w-2/3 mx-auto overflow-hidden rounded-xl border bg-background z-50">
+    <div
+      className={cn(
+        "mx-auto overflow-hidden rounded-xl border bg-background z-50 transition-all duration-300",
+        activeIndex === 1 || activeIndex === 2
+          ? "w-5/6 max-w-5xl"
+          : "w-2/3 max-w-4xl"
+      )}
+    >
       <TransitionPanel
         activeIndex={activeIndex}
         variants={{
@@ -255,21 +424,21 @@ export function Panel() {
         custom={direction}
       >
         {FEATURES.map((feature, index) => (
-          <div key={index} className="px-4 pt-4" ref={ref}>
-            <h3 className="mb-0.5 font-medium text-zinc-800 dark:text-zinc-100">
+          <div key={index} className="px-6 pt-6" ref={ref}>
+            <h3 className="mb-2 text-xl font-medium text-zinc-800 dark:text-zinc-100">
               {feature.title}
             </h3>
-            <p className="text-zinc-600 dark:text-zinc-400">
+            <p className="mb-4 text-zinc-600 dark:text-zinc-400">
               {feature.description}
             </p>
-            {feature.content && <div className="mt-2">{feature.content}</div>}
+            {feature.content && <div className="mt-4">{feature.content}</div>}
           </div>
         ))}
       </TransitionPanel>
-      <div className="flex justify-between p-4">
+      <div className="flex justify-between p-6">
         {activeIndex > 0 ? (
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => handleSetActiveIndex(activeIndex - 1)}
           >
             Previous
@@ -299,7 +468,7 @@ export function Panel() {
           </>
         ) : (
           <Button
-            variant="ghost"
+            variant="secondary"
             onClick={() => handleSetActiveIndex(activeIndex + 1)}
             disabled={isFetching}
           >
