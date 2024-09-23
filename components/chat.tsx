@@ -20,6 +20,7 @@ import { Badge } from "./ui/badge";
 import { FileContext } from "./chat/file-context";
 import { ShareChat } from "./chat/share-chat";
 import { ModeToggle } from "./layout/mode-toggle";
+import { title } from "process";
 
 const suggestedActions = [
   {
@@ -31,6 +32,11 @@ const suggestedActions = [
     title: "Who is the author",
     label: "of these documents?",
     action: "who is the author of these documents?",
+  },
+  {
+    title: "Key points",
+    label: "in these documents?",
+    action: "what are the key points?",
   },
 ];
 
@@ -145,7 +151,7 @@ export function Chat({
 
       <div className="fixed bottom-0 left-0 right-0 max-w-3xl w-full mx-auto p-4 flex flex-col space-y-4">
         {messages.length === 0 && (
-          <div className="grid sm:grid-cols-2 gap-2 w-full px-4 md:px-0 mx-auto md:max-w-[500px]">
+          <div className="grid sm:grid-cols-3 gap-2 w-full px-4 md:px-0 mx-auto md:max-w-[500px]">
             {suggestedActions.map((suggestedAction, index) => (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -161,7 +167,7 @@ export function Chat({
                       content: suggestedAction.action,
                     });
                   }}
-                  className="w-full text-left border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-300 rounded-lg p-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex flex-col"
+                  className="bg-background w-full text-left border  text-zinc-800 dark:text-zinc-300 rounded-lg p-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex flex-col"
                 >
                   <span className="font-medium">{suggestedAction.title}</span>
                   <span className="text-zinc-500 dark:text-zinc-400">
