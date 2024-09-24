@@ -125,7 +125,7 @@ export function Chat({
   };
   return (
     <div className="h-screen flex flex-col">
-      <header className="sticky w-full flex h-[53px] items-center justify-between px-2 -z-50">
+      <header className="sticky w-full flex h-[53px] items-center justify-between px-2">
         <FileContext
           activeFiles={selectedFilePathnames}
           allFiles={allFiles}
@@ -146,7 +146,7 @@ export function Chat({
             content={message.content}
           />
         ))}
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} className="mb-12" />
       </div>
 
       <div className="relative">
