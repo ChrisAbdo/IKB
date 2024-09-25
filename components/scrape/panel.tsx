@@ -394,7 +394,6 @@ export function Panel() {
               <div className="space-y-2">
                 {Object.entries(uploadProgress).map(([url, status]) => (
                   <div key={url} className="flex items-center space-x-2">
-                    <span className="truncate flex-grow">{url}</span>
                     {status === "loading" && <Dots />}
                     {status === "success" && (
                       <CheckIcon className="h-4 w-4 text-green-500" />
@@ -402,6 +401,7 @@ export function Panel() {
                     {status === "error" && (
                       <XIcon className="h-4 w-4 text-red-500" />
                     )}
+                    <span className="truncate flex-grow">{url}</span>
                   </div>
                 ))}
               </div>
