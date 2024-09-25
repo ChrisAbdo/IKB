@@ -41,10 +41,14 @@ export function FileContext({
           role="combobox"
           aria-label="Manage active files"
           aria-expanded={open}
-          className="flex justify-between md:max-w-[200px] lg:max-w-[200px]"
+          className="flex justify-between md:max-w-[200px] lg:max-w-[200px] tabular-nums"
         >
           <>
-            <span className="bg-emerald-400 size-2 rounded-full animate-pulse mr-2" />
+            <span
+              className={`size-2 rounded-full animate-pulse mr-2 ${
+                activeFiles.length > 0 ? "bg-emerald-400" : "bg-zinc-300"
+              }`}
+            />
             Active Files ({activeFiles.length})
           </>
           <CaretSortIcon className="ml-4 h-4 w-4 shrink-0 opacity-50" />
@@ -57,14 +61,18 @@ export function FileContext({
             <CommandEmpty>No files found.</CommandEmpty>
             <CommandGroup heading="Files">
               {allFiles.map((file) => (
-                <CommandItem key={file} onSelect={() => onFileToggle(file)}>
+                <CommandItem
+                  key={file}
+                  onSelect={() => onFileToggle(file)}
+                  className="flex items-center"
+                >
                   <CheckIcon
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "mr-2 h-4 w-4 flex-shrink-0",
                       activeFiles.includes(file) ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {file}
+                  <span className="truncate flex-1">{file}</span>
                 </CommandItem>
               ))}
             </CommandGroup>

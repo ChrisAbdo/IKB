@@ -15,13 +15,13 @@ export const Message = ({
 }) => {
   return (
     <motion.div
-      className="flex flex-col gap-4 w-full max-w-2xl mx-auto py-4 z-50"
+      className="flex flex-col gap-4 w-full max-w-2xl mx-auto py-4"
       initial={{ y: 5, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
     >
       {role === "assistant" ? (
         <div className="flex items-start space-x-4">
-          <Avatar className="w-8 h-8">
+          <Avatar className="w-8 h-8 -z-10">
             <AvatarFallback>
               <Bot className="size-5" />
             </AvatarFallback>
