@@ -7,7 +7,7 @@ import { Input } from "../ui/input";
 import { Skeleton } from "../ui/skeleton";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "../ui/button";
-import { LoaderIcon, SearchIcon, XIcon } from "lucide-react";
+import { CheckIcon, LoaderIcon, SearchIcon, XIcon } from "lucide-react";
 import { convertMarkdownToTxt } from "@/utils/md-to-txt";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "../ui/label";
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "../ui/separator";
+import Dots from "../ui/dots";
 
 export function Panel() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -39,6 +40,9 @@ export function Panel() {
   const [isScraping, setIsScraping] = useState(false);
   const [selectedScrapedUrls, setSelectedScrapedUrls] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [uploadProgress, setUploadProgress] = useState<
+    Record<string, "loading" | "success" | "error">
+  >({});
 
   const handleSitemapScrape = useCallback(async () => {
     setIsScraping(true);
@@ -96,37 +100,53 @@ export function Panel() {
         try {
           const urlsToUpload =
             inputMethod === "Manual" ? manualUrls : selectedScrapedUrls;
+
+          // Initialize progress for all URLs
+          setUploadProgress(
+            urlsToUpload.reduce(
+              (acc, url) => ({ ...acc, [url]: "loading" }),
+              {}
+            )
+          );
+
           for (const url of urlsToUpload) {
-            const content = await fetch(`https://r.jina.ai/${url}`).then(
-              (res) => res.text()
-            );
-            const plainText = `Source URL: ${url}\n\n${await convertMarkdownToTxt(
-              content
-            )}`;
-            const urlObj = new URL(url);
-            const pathParts = urlObj.pathname.split("/").filter(Boolean);
-            const filename = `${urlObj.hostname}${
-              pathParts.length > 0 ? "_" + pathParts.join("_") : ""
-            }.txt`;
-
-            const response = await fetch(
-              `/api/files/upload?filename=${filename}`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "text/plain",
-                },
-                body: plainText,
-              }
-            );
-
-            if (response.ok) {
-              successfulUploads.push(url);
-            } else {
-              const errorText = await response.text();
-              errors.push(
-                `Failed to upload file for URL: ${url}. Error: ${errorText}`
+            try {
+              const content = await fetch(`https://r.jina.ai/${url}`).then(
+                (res) => res.text()
               );
+              const plainText = `Source URL: ${url}\n\n${await convertMarkdownToTxt(
+                content
+              )}`;
+              const urlObj = new URL(url);
+              const pathParts = urlObj.pathname.split("/").filter(Boolean);
+              const filename = `${urlObj.hostname}${
+                pathParts.length > 0 ? "_" + pathParts.join("_") : ""
+              }.txt`;
+
+              const response = await fetch(
+                `/api/files/upload?filename=${filename}`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "text/plain",
+                  },
+                  body: plainText,
+                }
+              );
+
+              if (response.ok) {
+                successfulUploads.push(url);
+                setUploadProgress((prev) => ({ ...prev, [url]: "success" }));
+              } else {
+                const errorText = await response.text();
+                errors.push(
+                  `Failed to upload file for URL: ${url}. Error: ${errorText}`
+                );
+                setUploadProgress((prev) => ({ ...prev, [url]: "error" }));
+              }
+            } catch (error) {
+              console.error(`Error processing URL: ${url}`, error);
+              setUploadProgress((prev) => ({ ...prev, [url]: "error" }));
             }
           }
 
@@ -368,6 +388,26 @@ export function Panel() {
         title: "Create Knowledge Base",
         description:
           "This is the final step. Click the button below to create your knowledge base.",
+        content: (
+          <div className="mt-4">
+            {isLoading && (
+              <div className="space-y-2">
+                {Object.entries(uploadProgress).map(([url, status]) => (
+                  <div key={url} className="flex items-center space-x-2">
+                    <span className="truncate flex-grow">{url}</span>
+                    {status === "loading" && <Dots />}
+                    {status === "success" && (
+                      <CheckIcon className="h-4 w-4 text-green-500" />
+                    )}
+                    {status === "error" && (
+                      <XIcon className="h-4 w-4 text-red-500" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ),
       },
     ],
     [
@@ -381,6 +421,8 @@ export function Panel() {
       handleSitemapScrape,
       searchTerm,
       filteredScrapedUrls,
+      isLoading,
+      uploadProgress, // Add this to the dependency array
     ]
   );
 
