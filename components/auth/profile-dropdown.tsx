@@ -12,6 +12,7 @@ import {
 import { signOut } from "@/app/(auth)/auth";
 import { SignOutButton } from "./sign-out";
 import { Session } from "next-auth";
+import Link from "next/link";
 
 export default function ProfileDropdown({ session }: { session: Session }) {
   const signOutAction = async () => {
@@ -44,9 +45,11 @@ export default function ProfileDropdown({ session }: { session: Session }) {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <span>Settings</span>
-          </DropdownMenuItem>
+          <Link href="/profile">
+            <DropdownMenuItem>
+              <span>Settings</span>
+            </DropdownMenuItem>
+          </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <SignOutButton signOutAction={signOutAction} />

@@ -16,6 +16,7 @@ import {
   Shapes,
   Bug,
   FilePlus,
+  FileText,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { History } from "../history";
@@ -97,11 +98,11 @@ export default function NavLinks() {
             className="rounded-lg"
             aria-label="Settings"
           >
-            <Settings2 className="size-5" />
+            <FileText className="size-5" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right" sideOffset={5}>
-          Settings
+          Manage Files
         </TooltipContent>
       </Tooltip>
     </nav>
