@@ -32,7 +32,7 @@ export const Message = ({
         </div>
       ) : (
         <div className="flex justify-end">
-          <div className="bg-secondary text-primary rounded-lg px-4 py-2 text-sm max-w-[75%]">
+          <div className="bg-secondary text-primary rounded-lg px-4 py-2 text-sm max-w-[75%] -z-10">
             <Markdown>{content as string}</Markdown>
           </div>
         </div>

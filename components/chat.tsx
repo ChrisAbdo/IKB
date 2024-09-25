@@ -21,6 +21,7 @@ import { FileContext } from "./chat/file-context";
 import { ShareChat } from "./chat/share-chat";
 import { ModeToggle } from "./layout/mode-toggle";
 import { title } from "process";
+import { useRouter } from "next/navigation";
 
 const suggestedActions = [
   {
@@ -56,6 +57,8 @@ export function Chat({
   const [isMounted, setIsMounted] = useState(false);
   const [rowCount, setRowCount] = useState(1);
   const [allFiles, setAllFiles] = useState<string[]>([]);
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchAllFiles = async () => {
@@ -95,7 +98,7 @@ export function Chat({
     body: { id, selectedFilePathnames },
     initialMessages,
     onFinish: () => {
-      window.history.replaceState({}, "", `/${id}`);
+      router.replace(`/${id}`);
     },
   });
 
